@@ -64,16 +64,16 @@ File[] javaFiles = dir.listFiles(fileFilter);
 FileFilter filter = (File file) ‐> file.getName().endsWith(".java");
 ```
 
-### Streams & Collectors
+## Streams & Collectors
 > New APIs for map / filter / reduce
 
-#### Streams & Collectors Outline
+### Streams & Collectors Outline
 * Introduction: map / filter / reduce
 * What is a « Stream »?
 * Patterns to build a Stream
 * Operations on a Stream
 
-#### What Is a Stream?
+### What Is a Stream?
 * Technical answer: a typed interface
 ```java
 public interface Stream<T> extends BaseStream<T, Stream<T>> {
@@ -108,7 +108,7 @@ List<Person> list = new ArrayList<>() ;
 Stream<Person> stream = persons.stream();
 ```
 
-#### Map / Filter / Reduce
+### Map / Filter / Reduce
 * Let’s take a list a Person
 ```java
 List<Person> list = new ArrayList<>() ;
@@ -131,7 +131,7 @@ List<Person> list = new ArrayList<>() ;
 - This is the reduction step, equivalent to the SQL aggregation
 -->
 
-#### Mapping
+### Mapping
 * Operation: forEach()
   * Prints all the elements of the list
   * It takes an instance of Consumer as an argument
@@ -176,7 +176,7 @@ Consumer<String> c2 = System.out::println;
 Consumer<String> c3 = c1.andThen(c2);
 ```
 
-#### Filtering
+### Filtering
 * Example
 ```java
 List<Person> list = ...; Stream<Person> stream = list.stream(); Stream<Person> filtered =
@@ -216,20 +216,163 @@ persons.stream().peek(System.out::println).filter(person ‐> person.getAge() > 
 // The list « result » is empty
 ```
 
-* The Stream API defines intermediary operations
+* We saw the Stream API defines operations
   * forEach(Consumer) (not lazy)
   * peek(Consumer) (lazy)
   * filter(Predicate) (lazy)
 
-#### Mapping Operation
+### Mapping Operation
+* Example:
+```java
+List<Person> list = ... ; 
+Stream<Person> stream = list.stream(); 
+Stream<String> names = stream.map(person ‐> person.getName());
+```
+
+* map() returns a Stream, so it is an intermediary operation
+
+```java
+@FunctionalInterface
+public interface Function<T, R> { 
+    R apply(T t);
+}
+```
+
+### Flatmapping Operation
+* signature
+```java
+//The flatMapper takes an element of type T, and returns an element of type Stream<R>
+<R> Stream<R> flatMap(Function<T, Stream<R>> flatMapper);
+//If the flatMap was a regular map, it would return a Stream<Stream<R>>
+<R> Stream<R> map(Function<T, R> mapper);
+//Thus the « stream of streams » is flattened, and becomes a stream
+```
+
+* Summary Mapping
+  * forEach() and peek()
+  * filter()
+  * map() and flatMap()
 
 
+### Reduction
 
+* And what about the reduction step?
+  * Two kinds of reduction in the Stream API 
+  * 1st: aggregation = min, max, sum, etc...
 
+* How does it work?
+```java
+List<Integer> ages = ... ; 
+Stream<Integer> stream = ages.stream(); 
+Integer sum = stream.reduce(0, (age1, age2) ‐> age1 + age2);
 
+// 1st argument: identity element of the reduction operation
+// 2nd argument: reduction operation, of type BinaryOperator<T>
+```
 
+* BinaryOperator
 
+```java
+// A BinaryOperator is a special case of BiFunction
+@FunctionalInterface
+public interface BiFunction<T, U, R> {
+    R apply(T t, U u);
+}
 
+@FunctionalInterface
+public interface BinaryOperator<T> extends BiFunction<T, T, T> {
+    // T apply(T t1, T t2);
+}
+```
+### Aggregations
+```java 
+BinaryOperation<Integer> sum = (i1, i2) ‐> i1 + i2;
+Stream<Integer> stream = Stream.of(1, 2, 3, 4);
+int red = stream.reduce(id, sum); 
+System.out.println(red); //10
+```
 
+### Optionals
+* Optional means « there might be no result »
+```java
+List<Integer> ages = ... ; 
+Stream<Integer> stream = ages.stream(); 
+Optional<Integer> max = stream.max(Comparator.naturalOrder());
+```
+
+* How to use an Optional?
+```java
+Optional<String> opt = ... ;
+if (opt.isPresent()) {
+    String s = opt.get() ;
+} else {
+    ///... 
+}
+```
+
+* The method orElse() encapsulates both calls
+```java
+String s = opt.orElse("") ;
+```
+
+### Reductions
+* Available reductions: 
+  * max(), min()
+  * count()
+* Boolean reductions
+  * allMatch(), noneMatch(), anyMatch()
+* Reductions that return an optional 
+  * findFirst(), findAny()
+
+* Reductions are terminal operations
+* They trigger the processing of the data
+* Example
+```java
+List<Person> persons = ...;
+Terminal Operation
+Optional<Integer> minAge = 
+    persons.map(person ‐> person.getAge()) // Stream<Integer>
+        .filter(age ‐> age > 20) // Stream<Integer> 
+        .min(Comparator.naturalOrder()); // terminal operation
+```
+### Collectors
+* There is another type of reduction
+* Called « mutable » reduction
+* Instead of aggregating elements, this reduction put them in a « container »
+* Example: Collecting in a String
+```java
+List<Person> persons = ... ;
+String result = persons.stream().filter(person ‐> person.getAge() > 20) .map(Person::getLastName).collect(Collectors.joining(", ") );
+//Result is a String with all the names of the people in persons, older than 20, separated by a comma
+
+// Another example is: Collectors.toList() returns a list
+```
+
+* Collecting in a Map
+```java
+List<Person> persons = ... ;
+Map<Integer, List<Person>> result = persons.stream().filter(person ‐> person.getAge() > 20) .collect(Collectors.groupingBy(Person::getAge) );
+```
+* Result is a Map containing the people of persons, older than 20
+  * The keys are the ages of the people
+  * The values are the lists of the people of that age
+
+* So What Is a Stream?
+  * An object that allows one to define processings on data
+  * There is no limit on the amount of data that can be processed
+  * Those processings are typically map / filter / reduce operations
+  * Those processings are optimized : 
+    * First, we define all the operations 
+    * Then, the operations are triggered
+
+### Summary
+* Quick explanation of the map / filter / reduce
+* The difference between intermediary and final operations 
+* The « * nsuming » operations: forEach() and peek()
+* The « mapping » operations: map() and flatMap()
+* The « filter » operation: filter()
+* The « reduction » operations:
+  * Aggregations: reduce(), max(), min(), ...
+  * Mutable reductions: collect, Collectors
 
 
