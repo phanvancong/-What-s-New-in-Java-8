@@ -104,7 +104,7 @@ What does efficiently mean?
 
 * How Can We Build a Stream?
 ```java
-List<Person> persons = ... ;
+List<Person> list = new ArrayList<>() ;
 Stream<Person> stream = persons.stream();
 ```
 
@@ -130,4 +130,106 @@ List<Person> list = new ArrayList<>() ;
 <!--
 - This is the reduction step, equivalent to the SQL aggregation
 -->
+
+#### Mapping
+* Operation: forEach()
+  * Prints all the elements of the list
+  * It takes an instance of Consumer as an argument
+```java
+stream.forEach(p ‐> System.out.println(p));
+```
+* Interface Consumer<T>
+  * Consumer<T> is a functional interface
+  * Can be implemented by a lambda expression
+```java
+Consumer<T> c = p ‐> System.out.println(p);
+```
+```java
+@FunctionalInterface
+public interface Consumer<T> { 
+    void accept(T t);
+}
+```
+* Method reference
+```java
+Consumer<T> c = System.out::println;
+```
+
+* In fact Consumer<T> is a bit more complex
+```java
+@FunctionalInterface
+public interface Consumer<T> {
+    void accept(T t);
+    //One can chain consumers!
+    default Consumer<T> andThen(Consumer<? super T> after) {            
+        Objects.requireNonNull(after);
+        return (T t) ‐> { accept(t); after.accept(t); 
+    };
+}
+```
+* Let’s chain consumers
+```java
+List<String> list = new ArrayList<>();
+A First Operation
+Consumer<String> c1 = list::add; 
+Consumer<String> c2 = System.out::println;
+Consumer<String> c3 = c1.andThen(c2);
+```
+
+#### Filtering
+* Example
+```java
+List<Person> list = ...; Stream<Person> stream = list.stream(); Stream<Person> filtered =
+stream.filter(person ‐> person.getAge() > 20);
+```
+* Takes a predicate as a parameter:
+```java
+Predicate<Person> p = person ‐> person.getAge() > 20;
+
+// Predicate interface
+@FunctionalInterface
+A Second Operation: Filter
+public interface Predicate<T> { 
+    boolean test(T t);
+    default Predicate<T> and(Predicate<? super T> other) { ... }
+    default Predicate<T> or(Predicate<? super T> other) { ... }
+    default Predicate<T> negate() { ... }
+}
+```
+
+<!-- a stream does not hold any data -->
+* Question: what do we have in *filtered* stream
+  * ~~ The filtered data~~
+  * nothing, since a Stream does not hold any data
+> The call to the filter method is ==lazy==. And all the methods of Stream that return another Stream are lazy
+<!--Another way of saying it:
+an operation on a Stream that returns a Stream is called an intermediary operation-->
+
+* What does this code do?
+```java
+List<String> result = new ArrayList<>();
+List<Person> persons = ... ;
+persons.stream().peek(System.out::println).filter(person ‐> person.getAge() > 20).peek(result::add);
+
+// Answer: nothing!
+// This code does not print anything 
+// The list « result » is empty
+```
+
+* The Stream API defines intermediary operations
+  * forEach(Consumer) (not lazy)
+  * peek(Consumer) (lazy)
+  * filter(Predicate) (lazy)
+
+#### Mapping Operation
+
+
+
+
+
+
+
+
+
+
 
