@@ -1,4 +1,4 @@
-#What’s New in Java 8
+# What’s New in Java 8
 > Introduction to Lambda Expression in Java 8
 
 ## Agenda
