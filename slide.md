@@ -104,14 +104,14 @@ What does efficiently mean?
 
 * How Can We Build a Stream?
 ```java
-List<Person> list = new ArrayList<>() ;
-Stream<Person> stream = persons.stream();
+List<Person> people = new ArrayList<>() ;
+Stream<Person> stream = people.stream();
 ```
 
 ### Map / Filter / Reduce
 * Let’s take a list a Person
 ```java
-List<Person> list = new ArrayList<>() ;
+List<Person> people = new ArrayList<>() ;
 ```
 > Suppose we want to compute the « average of the age of the people older than 20 »
 
@@ -126,12 +126,12 @@ List<Person> list = new ArrayList<>() ;
 - The filtering step takes a List<Integer> and returns a List<Integer> - But there some elements have been filtered out in the process
 -->
 
-* 3rd step: average
+* 3rd step: reduce
 <!--
 - This is the reduction step, equivalent to the SQL aggregation
 -->
 
-### Mapping
+### Consumming
 * Operation: forEach()
   * Prints all the elements of the list
   * It takes an instance of Consumer as an argument
@@ -176,11 +176,12 @@ Consumer<String> c2 = System.out::println;
 Consumer<String> c3 = c1.andThen(c2);
 ```
 
-### Filtering
+### Filtering Operation
 * Example
 ```java
-List<Person> list = ...; Stream<Person> stream = list.stream(); Stream<Person> filtered =
-stream.filter(person ‐> person.getAge() > 20);
+List<Person> list = ...; 
+Stream<Person> stream = list.stream(); 
+Stream<Person> filtered = stream.filter(person ‐> person.getAge() > 20);
 ```
 * Takes a predicate as a parameter:
 ```java
@@ -199,7 +200,7 @@ public interface Predicate<T> {
 
 <!-- a stream does not hold any data -->
 * Question: what do we have in *filtered* stream
-  * ~~ The filtered data~~
+  * ~~The filtered data~~
   * nothing, since a Stream does not hold any data
 > The call to the filter method is ==lazy==. And all the methods of Stream that return another Stream are lazy
 <!--Another way of saying it:
@@ -208,8 +209,8 @@ an operation on a Stream that returns a Stream is called an intermediary operati
 * What does this code do?
 ```java
 List<String> result = new ArrayList<>();
-List<Person> persons = ... ;
-persons.stream().peek(System.out::println).filter(person ‐> person.getAge() > 20).peek(result::add);
+List<Person> people = ... ;
+people.stream().peek(System.out::println).filter(person ‐> person.getAge() > 20).peek(result::add);
 
 // Answer: nothing!
 // This code does not print anything 
@@ -254,7 +255,7 @@ public interface Function<T, R> {
   * map() and flatMap()
 
 
-### Reduction
+### Reducing Operation
 
 * And what about the reduction step?
   * Two kinds of reduction in the Stream API 
@@ -328,10 +329,10 @@ String s = opt.orElse("") ;
 * They trigger the processing of the data
 * Example
 ```java
-List<Person> persons = ...;
+List<Person> people = ...;
 Terminal Operation
 Optional<Integer> minAge = 
-    persons.map(person ‐> person.getAge()) // Stream<Integer>
+    people.map(person ‐> person.getAge()) // Stream<Integer>
         .filter(age ‐> age > 20) // Stream<Integer> 
         .min(Comparator.naturalOrder()); // terminal operation
 ```
@@ -341,19 +342,19 @@ Optional<Integer> minAge =
 * Instead of aggregating elements, this reduction put them in a « container »
 * Example: Collecting in a String
 ```java
-List<Person> persons = ... ;
-String result = persons.stream().filter(person ‐> person.getAge() > 20) .map(Person::getLastName).collect(Collectors.joining(", ") );
-//Result is a String with all the names of the people in persons, older than 20, separated by a comma
+List<Person> people = ... ;
+String result = people.stream().filter(person ‐> person.getAge() > 20) .map(Person::getLastName).collect(Collectors.joining(", ") );
+//Result is a String with all the names of the people in people, older than 20, separated by a comma
 
 // Another example is: Collectors.toList() returns a list
 ```
 
 * Collecting in a Map
 ```java
-List<Person> persons = ... ;
-Map<Integer, List<Person>> result = persons.stream().filter(person ‐> person.getAge() > 20) .collect(Collectors.groupingBy(Person::getAge) );
+List<Person> people = ... ;
+Map<Integer, List<Person>> result = people.stream().filter(person ‐> person.getAge() > 20) .collect(Collectors.groupingBy(Person::getAge) );
 ```
-* Result is a Map containing the people of persons, older than 20
+* Result is a Map containing the people of people, older than 20
   * The keys are the ages of the people
   * The values are the lists of the people of that age
 
@@ -368,7 +369,7 @@ Map<Integer, List<Person>> result = persons.stream().filter(person ‐> person.g
 ### Summary
 * Quick explanation of the map / filter / reduce
 * The difference between intermediary and final operations 
-* The « * nsuming » operations: forEach() and peek()
+* The « Consuming » operations: forEach() and peek()
 * The « mapping » operations: map() and flatMap()
 * The « filter » operation: filter()
 * The « reduction » operations:
