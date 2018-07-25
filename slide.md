@@ -13,6 +13,8 @@
 * Collection API
 
 ## Introduction to the **Lambda expressions**
+
+### Outline
 * The lambda syntax
 * Functional interfaces
 * Method references
@@ -116,20 +118,15 @@ List<Person> people = new ArrayList<>() ;
 > Suppose we want to compute the « average of the age of the people older than 20 »
 
 * 1st step: mapping
-<!--
-- The mapping step takes a List<Person> and returns a List<Integer>
-- The size of both lists is the same
--->
+  * The mapping step takes a List<Person> and returns a List<Integer>
+  * The size of both lists is the same
 
 * 2nd step: filtering
-<!--
-- The filtering step takes a List<Integer> and returns a List<Integer> - But there some elements have been filtered out in the process
--->
+  * The filtering step takes a List<Integer> and returns a List<Integer> 
+  * But there some elements have been filtered out in the process
 
 * 3rd step: reduce
-<!--
-- This is the reduction step, equivalent to the SQL aggregation
--->
+  * This is the reduction step, equivalent to the SQL aggregation
 
 ### Consumming
 * Operation: forEach()
@@ -170,7 +167,6 @@ public interface Consumer<T> {
 * Let’s chain consumers
 ```java
 List<String> list = new ArrayList<>();
-A First Operation
 Consumer<String> c1 = list::add; 
 Consumer<String> c2 = System.out::println;
 Consumer<String> c3 = c1.andThen(c2);
@@ -189,7 +185,6 @@ Predicate<Person> p = person ‐> person.getAge() > 20;
 
 // Predicate interface
 @FunctionalInterface
-A Second Operation: Filter
 public interface Predicate<T> { 
     boolean test(T t);
     default Predicate<T> and(Predicate<? super T> other) { ... }
@@ -330,7 +325,6 @@ String s = opt.orElse("") ;
 * Example
 ```java
 List<Person> people = ...;
-Terminal Operation
 Optional<Integer> minAge = 
     people.map(person ‐> person.getAge()) // Stream<Integer>
         .filter(age ‐> age > 20) // Stream<Integer> 
@@ -343,7 +337,11 @@ Optional<Integer> minAge =
 * Example: Collecting in a String
 ```java
 List<Person> people = ... ;
-String result = people.stream().filter(person ‐> person.getAge() > 20) .map(Person::getLastName).collect(Collectors.joining(", ") );
+String result = 
+    people.stream()
+    .filter(person ‐> person.getAge() > 20)
+    .map(Person::getLastName)
+    .collect(Collectors.joining(", "));
 //Result is a String with all the names of the people in people, older than 20, separated by a comma
 
 // Another example is: Collectors.toList() returns a list
@@ -352,7 +350,10 @@ String result = people.stream().filter(person ‐> person.getAge() > 20) .map(Pe
 * Collecting in a Map
 ```java
 List<Person> people = ... ;
-Map<Integer, List<Person>> result = people.stream().filter(person ‐> person.getAge() > 20) .collect(Collectors.groupingBy(Person::getAge) );
+Map<Integer, List<Person>> result = 
+    people.stream()
+    .filter(person ‐> person.getAge() > 20)
+    .collect(Collectors.groupingBy(Person::getAge) );
 ```
 * Result is a Map containing the people of people, older than 20
   * The keys are the ages of the people
@@ -376,4 +377,148 @@ Map<Integer, List<Person>> result = people.stream().filter(person ‐> person.ge
   * Aggregations: reduce(), max(), min(), ...
   * Mutable reductions: collect, Collectors
 
+## Java 8 Date and Time API
 
+### Outline
+* Drawback of Java 7 Date API
+* The new Date API from Java 8: 7 concepts 
+* Instant and Duration
+* LocalDate, Period
+* TemporalAdjusters  LocalTime
+* ZonedTime
+* Date formatters
+
+### Drawback of Java 7 Date API
+* One class : java.util.Date (and java.sql.Date) [JDK 1.0]
+* One pattern
+```java
+Date date = new Date();
+```
+* How can I createa date for the July 25, 2018?
+```java
+Calendar cal = Calendar.getInstance(); // just now ! 
+cal.set(2018, 6, 25); // january is 0
+Date date = cal.getTime();
+```
+* How can I add 7 days to a date?
+```java
+cal.add(Calendar.DAY_OF_MONTH, 7);
+Date oneWeekLater = cal.getTime(); // one week later
+```
+
+* The mutable java.util.Date class requires more care, so should treat it is immutable class
+```java
+//Use a defensive copy!
+public class Customer {
+    private Date creationDate ;
+    public Date getCreationDate() {
+        return new Date(this.creationDate.getTime()) ;
+    }
+}
+// Overheads: new object to create on each call, overhead for the garbage collector
+```
+
+## The Date API in Java 8
+
+* New API, package is java.time
+* New key concepts
+* Interoperation with the legacy API
+
+### 1st Concept: Instant
+* And Instant is a point on the time line
+* The precision is the nanosecond!
+* Instant 0 is the January the 1st, 1970 at midnight GMT
+* Instant.now() is the current instant
+* An Instant is immutable
+* How can I use Instant?
+```java
+Instant start = Instant.now();
+//new concept: Duration
+Duration elapsed = Duration.between(start, end); 
+long millis = elapsed.toMillis();
+```
+#### 2nd Concept: Duration
+* A Duration is the amount of time between two Instant
+* Some methods:
+  * toNanos(), toMillis() ...
+  * minusNanos(), ...
+  * multipliedBy(), dividedBy(), negated()
+  * isZero(), isNegative()
+### 3rd Concept: LocalDate
+```java
+LocalDate now = LocalDate.now(); 
+LocalDate dateOfBirth = LocalDate.of(2018, Month.JULY, 25);
+```
+###  4th Concept: Period
+* A Period is the amount of time between two LocalDate 
+* Same concept as Duration, same kind of methods
+```java
+long days = dateOfBirth.until(now, ChronoUnit.DAYS); 
+System.out.println("# days = " + days);
+```
+
+### 5th Concept: DateAdjuster
+* Useful to add (or substract) an amount of time to an Instant or a LocalDate
+* Use the method with()
+```java
+LocalDate now = LocalDate.now(); 
+LocalDate nextSunday = now.with(TemporalAdjusters.next(DayOfWeek.SUNDAY));
+```
+* 14 static methods to adjust an Instant or a LocalDate
+### 6th Concept: LocalTime
+* A LocalTime is a time of day
+```java
+LocalTime now = LocalTime.now();
+LocalTime time = LocalTime.of(10, 20) ; // 10:20
+```
+* Plus a set of methods to manipulate the time
+```java
+LocalTime bedTime = LocalTime.of(23, 0);
+LocalTime wakeUpTime = bedTime.plusHours(8); // 7:00
+```
+### 7th Concept: Zoned Time
+* There are Time Zones all over the earth
+* Java uses the IANA database (https://www.iana.org/time-zones)
+```java
+Set<String> allZonesIds = ZoneId.getAvailableZoneIds(); 
+String ukTZ = ZoneId.of("Europe/London");
+```
+```java
+System.out.println( ZonedDateTime.of(
+    1564, Month.APRIL.getValue(), 23, // year / month / day 
+    10, 0, 0, 0, // h / mn / s / nanos 
+    ZoneId.of("Europe/London"))
+); // prints 1564‐04‐23T10:00‐00:01:15[Europe/London]
+```
+* ZonedDateTime exposes a set of methods to compute other zoned times : plus, minus, with, etc...
+```java
+ZonedDateTime currentMeeting = ZonedDateTime.of(
+    LocalDate.of(2014, Month.MARCH, 12), // LocalDate 
+    LocalTime.of(9, 30), // LocalTime 
+    ZoneId.of("Europe/London")
+);
+ZonedDateTime nextMeeting = currentMeeting.plus(Period.ofMonth(1));
+```
+* And to change the time zone:
+```java
+ZonedDateTime nextMeetingUS = nextMeeting.withZoneSameInstant(ZoneId.of("US/Central"));
+```
+
+### How to Format a Date
+* The new date API proposes a new formatter: DateTimeFormatter 
+* The DateTimeFormatter proposes a set of predefined formatters, available as constants
+```java
+ZonedDateTime nextMeetingUS = nextMeeting.withZoneSameInstant(ZoneId.of("US/Central"));
+System.out.println( DateTimeFormatter.ISO_DATE_TIME.format(nextMeetingUS)
+// prints 2014‐04‐12T03:30:00‐05:00[US/Central]
+System.out.println( DateTimeFormatter.RFC_1123_DATE_TIME.format(nextMeetingUS));
+// prints Sat, 12 Apr 2014 03:30:00 ‐0500
+```
+
+### Summary
+* The new Date API from Java 8 fixes the issues of Java 7 
+* The new concepts of « date » in Java
+* The new concepts of « duration » in Java
+* How to compute a new date from a given date
+* How to deal with time zones
+* How to format date following the established standards
